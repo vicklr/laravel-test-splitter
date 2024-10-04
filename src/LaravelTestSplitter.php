@@ -11,6 +11,7 @@ use Illuminate\Support\Str;
 class LaravelTestSplitter
 {
     private const DEFAULT_TEST_TIME = 2;
+
     private const TEST_DIRECTORY = 'tests/';
 
     public function getTestCases(): Collection
@@ -18,14 +19,14 @@ class LaravelTestSplitter
         $testList = base_path('available-tests.xml');
         $knownFilesDir = base_path('.github/test-runtime');
 
-        $phpUnitExecutable = base_path('vendor/bin/' . config('laravel-test-splitter.executable', 'pest'));
-        exec("$phpUnitExecutable --list-tests-xml " . base_path('available-tests.xml'));
+        $phpUnitExecutable = base_path('vendor/bin/'.config('laravel-test-splitter.executable', 'pest'));
+        exec("$phpUnitExecutable --list-tests-xml ".base_path('available-tests.xml'));
 
         $knownTestCases = [];
         // Check if the folder exists
         if (is_dir($knownFilesDir)) {
             // Scan for all .xml files in the folder
-            $files = glob($knownFilesDir . '/*.xml');
+            $files = glob($knownFilesDir.'/*.xml');
             // Parse all XML files from the given folder to gather known test case runtimes
             $knownTestCases = $this->parseJUnitXMLFromFiles($files);
         }
@@ -37,7 +38,7 @@ class LaravelTestSplitter
     // Load and parse a single JUnit XML file to get test runtimes
     private function parseJUnitXML($xmlFile): array
     {
-        if (!file_exists($xmlFile)) {
+        if (! file_exists($xmlFile)) {
             throw new Exception("File not found: $xmlFile\n");
         }
 
@@ -50,11 +51,11 @@ class LaravelTestSplitter
 
         // Iterate through all <testcase> elements in the XML
         foreach ($xml->xpath('//testcase') as $testCase) {
-            $classname = (string)$testCase['classname'];
-            $time = (float)$testCase['time'];
+            $classname = (string) $testCase['classname'];
+            $time = (float) $testCase['time'];
 
             // Add the time to the corresponding class in the array
-            if (!isset($testCases[$classname])) {
+            if (! isset($testCases[$classname])) {
                 $testCases[$classname] = 0;
             }
             $testCases[$classname] += $time;
@@ -64,7 +65,7 @@ class LaravelTestSplitter
     }
 
     // Parse all JUnit XML files from a folder and merge the test cases
-    public function parseJUnitXMLFromFiles(Iterable $files): array
+    public function parseJUnitXMLFromFiles(iterable $files): array
     {
         $allTestCases = [];
 
@@ -83,20 +84,20 @@ class LaravelTestSplitter
     // Parse the input list of tests, calculate total runtime per class
     private function parseTestList(string $testListFile, array $knownTestCases)
     {
-        if (!file_exists($testListFile)) {
+        if (! file_exists($testListFile)) {
             throw new Exception("Test list file not found: $testListFile");
         }
 
         $xml = simplexml_load_file($testListFile);
         if ($xml === false) {
-            throw new Exception("Failed to parse test list XML");
+            throw new Exception('Failed to parse test list XML');
         }
 
         $testCases = [];
 
         // Iterate through the test classes and methods
         foreach ($xml->xpath('//testCaseClass') as $testClass) {
-            $className = (string)$testClass['name'];
+            $className = (string) $testClass['name'];
             if (Str::startsWith($className, 'P\\')) {
                 $className = Str::after($className, 'P\\');
             }
@@ -112,7 +113,7 @@ class LaravelTestSplitter
 
             $filename = $this->getTestFilePath($className);
 
-            if (!file_exists($filename)) {
+            if (! file_exists($filename)) {
                 throw new Exception("File not found: $filename\n");
             }
 
@@ -131,7 +132,8 @@ class LaravelTestSplitter
         // Convert the class name to a file path (assuming PSR-4 structure)
         $path = str_replace('\\', '/', $className);
         $path = str_replace('Tests/', '', $path);
-        return self::TEST_DIRECTORY . $path . '.php';
+
+        return self::TEST_DIRECTORY.$path.'.php';
     }
 
     // Function to split test classes into X groups, optimized for shortest runtime on the slowest group
@@ -168,21 +170,21 @@ class LaravelTestSplitter
         $xml = '';
         foreach ($groups as $index => $testCase) {
             $xml .= sprintf(
-                '<testsuite name="group%s">' . "\n",
+                '<testsuite name="group%s">'."\n",
                 ($index + 1)
             );
             foreach ($testCase['classes'] as $test) {
                 $xml .= sprintf(
-                    "  <file>%s</file>" . "\n",
+                    '  <file>%s</file>'."\n",
                     $test['filename']
                 );
             }
-            $xml .= '</testsuite>' . "\n\n";
+            $xml .= '</testsuite>'."\n\n";
         }
 
-        $baseXmlContent = file_get_contents(file_exists(base_path('phpunit.xml')) ? base_path('phpunit.xml') : __DIR__ . '/assets/phpunit.xml.base');
+        $baseXmlContent = file_get_contents(file_exists(base_path('phpunit.xml')) ? base_path('phpunit.xml') : __DIR__.'/assets/phpunit.xml.base');
         $pattern = '/<testsuites>(.*?)<\/testsuites>/s';
-        $replaced = preg_replace($pattern, '<testsuites>' . $xml . '</testsuites>', $baseXmlContent);
+        $replaced = preg_replace($pattern, '<testsuites>'.$xml.'</testsuites>', $baseXmlContent);
         $fileName = base_path('phpunit.runtime.xml');
         file_put_contents($fileName, $replaced);
 

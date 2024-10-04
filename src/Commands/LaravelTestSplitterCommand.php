@@ -19,7 +19,7 @@ class LaravelTestSplitterCommand extends Command
         $chunks = (int) $this->option('chunks');
 
         if ($chunks <= 0) {
-            $this->fail(new InvalidArgumentException("Number of groups must be a positive integer"));
+            $this->fail(new InvalidArgumentException('Number of groups must be a positive integer'));
         }
 
         $this->info("Splitting tests into $chunks groups...");
@@ -38,18 +38,19 @@ class LaravelTestSplitterCommand extends Command
 
         $fileName = $splitter->generateRuntimeConfig($groups);
 
-        $this->info("");
+        $this->info('');
         $this->info("Number of groups: $chunks");
-        $this->info("==== CHECKSUM ====");
+        $this->info('==== CHECKSUM ====');
         $this->info("Baseline: $baselineCheckSumCount files");
         $this->info("Check: $checkSumCount files");
 
         if ($baselineCheckSumCount !== $checkSumCount) {
-            $this->error("❌ Checksum for count mismatch");
+            $this->error('❌ Checksum for count mismatch');
+
             return 1;
         }
 
-        $this->info("✅ Checksum for count");
+        $this->info('✅ Checksum for count');
 
         $this->comment(sprintf('All done, %s generated', $fileName));
 
